@@ -4,12 +4,10 @@ Ecohydrology Analysis in Hawaii
 Calculating probability of runoff across the landscape
 
 # Data
-“data/” folder contains required data for processing steps
-All data in this folder has been created and published by other work
+“data/” folder contains required data for processing steps. All data in this folder has been created and published by other work.
 
-“infiltration_data/” contains original and processed infiltration (kfs) data
-Final output manually created by combining all previously known kfs data
-“kfs_data/hiecoh_kfs_data.csv”
+“infiltration_data/” contains original and processed infiltration (kfs) data. Final output manually created by combining all previously known kfs data
+“kfs_data/hiecoh_kfs_data.csv”.
 
 # Code
 1_prcp_pdfs_higap.R
