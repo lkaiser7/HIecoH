@@ -14,6 +14,8 @@ rootDir<-"C:/Users/lkaiser/Desktop/HCSU/HIecoH/"
 setwd(rootDir)
 # set paths 
 dataDir<-paste0(rootDir, "data/")
+# create output folder path
+dir.create(paste0(rootDir, "outputs/"), showWarnings = FALSE)
 outDir<-paste0(rootDir, "outputs/")
 
 # load packages
