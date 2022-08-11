@@ -16,6 +16,8 @@ rootDir=rootDirs[min(which(dir.exists(rootDirs)))]
 # set paths 
 dataDir<-paste0(rootDir, "data/")
 outDir<-paste0(dirname(rootDir), "/HIecoH_outputs/")
+# create output folder path
+dir.create(outDir, showWarnings = FALSE)
 
 # load packages
 library(readr)
