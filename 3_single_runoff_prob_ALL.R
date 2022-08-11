@@ -14,7 +14,7 @@ rootDir=rootDirs[min(which(dir.exists(rootDirs)))]
 setwd(rootDir)
 # set paths 
 dataDir<-paste0(rootDir, "data/")
-outDir<-paste0(rootDir, "outputs/")
+outDir<-paste0(dirname(rootDir), "/HIecoH_outputs/")
 
 # load packages
 library(readr)

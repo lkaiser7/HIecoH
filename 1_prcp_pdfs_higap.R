@@ -10,11 +10,12 @@
 ##### SET UP #####
 
 # set working directory
-rootDir<-"C:/Users/lkaiser/Desktop/HCSU/HIecoH/"
-setwd(rootDir)
+rootDirs=c("C:/Users/lkaiser/Desktop/HCSU/HIecoH/", "D:/projects/HIecoH/HIecoH_P2/HIecoH/")
+rootDir=rootDirs[min(which(dir.exists(rootDirs)))]
+#rootDir<-"C:/Users/lkaiser/Desktop/HCSU/HIecoH/"setwd(rootDir)
 # set paths 
 dataDir<-paste0(rootDir, "data/")
-outDir<-paste0(rootDir, "outputs/")
+outDir<-paste0(dirname(rootDir), "/HIecoH_outputs/")
 
 # load packages
 library(readr)
