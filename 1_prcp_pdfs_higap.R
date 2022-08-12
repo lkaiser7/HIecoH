@@ -50,6 +50,8 @@ plot(loc_utm, add = T)
 
 ##### DATA PROCESSING #####
 
+#######################################################
+#process nc files that have pdf data for each land pixel
 # select hourly precipitation pdf grids
 pdf_grids<-list.files(paste0(dataDir, "hourly_pcp_pdf_grid/"), pattern = ".nc")
 # head(pdf_grids)
@@ -102,7 +104,8 @@ write.csv(nc_pgw_data, file = paste0(outDir, "AllRasters_coords_future_pdf.csv")
 # head(nc_hist_data)
 # head(nc_pgw_data)
 
-##### HIGAP VALUES #####
+######################################################################
+#NOW EXTRACT HIGAP VALUES FOR SAME POINTS #####
 
 # label columns
 colnames(ll_array)<-c("LONG", "LAT")
@@ -136,8 +139,10 @@ head(pdf_higap)
 # save final data set
 write.csv(pdf_higap, file = paste0(outDir, "AllRasters_coords_pdf_higap.csv"))
 
-### RASTER REFERENCE ###
+####################################################
+#NOW CREATE A RASTER BASED ON THE POINT DATA
 
+#FIRST LOAD THE OUTPUTS FROM STEP ABOVE
 # create pdf higap raster
 pdf_higap<-read.csv(paste0(outDir, "AllRasters_coords_pdf_higap.csv"))
 head(pdf_higap)
@@ -151,7 +156,8 @@ pdf_pgw<-cbind(pdf_higap, nc_pgw_data[,-1:-3])
 # head(pdf_hist, n = c(3, 9))
 # head(pdf_pgw, n = c(3, 9))
 
-# exctract higap as data frame
+#GET HIGHER RESOLUTIO HIGAP (90M) AND TURN INTO DATA FRAME
+# extract higap as data frame
 # higap_spdf<-as.data.frame(as(higap, "SpatialPixelsDataFrame"))
 higap_spdf<-as.data.frame(higap, xy = T)
 higap_ex<-extract(higap, cbind(higap_spdf$x, higap_spdf$y), cellnumbers = T)
@@ -161,6 +167,8 @@ dim(higap_spdf); head(higap_spdf)
 # remove data to free up memory space
 rm(higap_ex)
 
+#############################
+#FIRST CREATE RASTER TEMPLATE FILE
 # create an empty raster object to the extent of the points
 #rast<-raster(ncols = 240, nrows = 240, ext = extent(higap), crs = crs(higap)) #LF: why 240?
 rast<-raster("data/pcp_base.tif") #use past raster created from lulins nc files as template
@@ -168,6 +176,21 @@ rast=projectRaster(rast, crs = crs(higap))
 # rast<-raster(ncols = 90, nrows = 90, ext = extent(higap), crs = crs(higap))
 # dim() and values() are non-spatial properties
 # extent(), crs(), and res() are spatial properties
+
+#check resolution
+tmp=pdf_higap[c(1:100),]
+jnk=abs(tmp$X_UTM-c(tmp$X_UTM[c(2:length(tmp$X_UTM))], NA))
+jnk[jnk==0]=NA
+min(jnk, na.rm=T) #x resolution
+
+jnk=abs(tmp$Y_UTM-c(tmp$Y_UTM[c(2:length(tmp$Y_UTM))], NA))
+jnk[jnk==0]=NA
+min(jnk, na.rm=T) #x resolution
+
+pdf_higap$X_UTM[1]-pdf_higap$X_UTM[2]
+pdf_higap$Y_UTM[1]-pdf_higap$Y_UTM[2]
+pdf_higap$Y_UTM[2]-pdf_higap$Y_UTM[3]
+pdf_higap$X_UTM[2]-pdf_higap$X_UTM[3]
 
 # set up data frames for rasters
 higap_df<-pdf_higap[,c(5, 6, 1)]
