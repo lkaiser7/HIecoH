@@ -177,20 +177,15 @@ rast=projectRaster(rast, crs = crs(higap))
 # dim() and values() are non-spatial properties
 # extent(), crs(), and res() are spatial properties
 
-#check resolution
-tmp=pdf_higap[c(1:100),]
-jnk=abs(tmp$X_UTM-c(tmp$X_UTM[c(2:length(tmp$X_UTM))], NA))
-jnk[jnk==0]=NA
-min(jnk, na.rm=T) #x resolution
-
-jnk=abs(tmp$Y_UTM-c(tmp$Y_UTM[c(2:length(tmp$Y_UTM))], NA))
-jnk[jnk==0]=NA
-min(jnk, na.rm=T) #x resolution
-
-pdf_higap$X_UTM[1]-pdf_higap$X_UTM[2]
-pdf_higap$Y_UTM[1]-pdf_higap$Y_UTM[2]
-pdf_higap$Y_UTM[2]-pdf_higap$Y_UTM[3]
-pdf_higap$X_UTM[2]-pdf_higap$X_UTM[3]
+# #check resolution
+# tmp=pdf_higap[c(1:100),]
+# jnk=abs(tmp$X_UTM-c(tmp$X_UTM[c(2:length(tmp$X_UTM))], NA))
+# jnk[jnk==0]=NA
+# min(jnk, na.rm=T) #x resolution
+# 
+# jnk=abs(tmp$Y_UTM-c(tmp$Y_UTM[c(2:length(tmp$Y_UTM))], NA))
+# jnk[jnk==0]=NA
+# min(jnk, na.rm=T) #x resolution
 
 # set up data frames for rasters
 higap_df<-pdf_higap[,c(5, 6, 1)]
