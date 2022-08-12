@@ -12,6 +12,7 @@
 # set working directory
 rootDirs=c("C:/Users/lkaiser/Desktop/HCSU/HIecoH/", "D:/projects/HIecoH/HIecoH_P2/HIecoH/")
 rootDir=rootDirs[min(which(dir.exists(rootDirs)))]
+setwd(rootDir)
 #rootDir<-"C:/Users/lkaiser/Desktop/HCSU/HIecoH/"setwd(rootDir)
 # set paths 
 dataDir<-paste0(rootDir, "data/")
@@ -53,7 +54,7 @@ plot(loc_utm, add = T)
 pdf_grids<-list.files(paste0(dataDir, "hourly_pcp_pdf_grid/"), pattern = ".nc")
 # head(pdf_grids)
 n_pdf<-length(pdf_grids)
-
+n=1
 for(n in 1:n_pdf){  # set n = 1 for debugging
   print(n) # for counting
   # open netcdf file
@@ -107,7 +108,7 @@ write.csv(nc_pgw_data, file = paste0(outDir, "AllRasters_coords_future_pdf.csv")
 colnames(ll_array)<-c("LONG", "LAT")
 # # save data table  
 # write.csv(ll_array, file = paste0(outDir, "AllRasters_coords_pdf_LL.csv"))
-
+head(ll_array)
 # create copy of data
 ll_array2<-ll_array
 
@@ -161,7 +162,9 @@ dim(higap_spdf); head(higap_spdf)
 rm(higap_ex)
 
 # create an empty raster object to the extent of the points
-rast<-raster(ncols = 240, nrows = 240, ext = extent(higap), crs = crs(higap))
+#rast<-raster(ncols = 240, nrows = 240, ext = extent(higap), crs = crs(higap)) #LF: why 240?
+rast<-raster("data/pcp_base.tif") #use past raster created from lulins nc files as template
+rast=projectRaster(rast, crs = crs(higap))
 # rast<-raster(ncols = 90, nrows = 90, ext = extent(higap), crs = crs(higap))
 # dim() and values() are non-spatial properties
 # extent(), crs(), and res() are spatial properties

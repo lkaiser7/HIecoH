@@ -85,6 +85,7 @@ pdf_pgw<-cbind(pdf_class, nc_pgw_data[,-1:-3])
 # bins divided into 0 to 10^-3 mm/h in the first bin
 # then evenly divided into 120 bins from 10^-3 to 10^3
 left_flux_breaks = seq(from = 10^-3, to = 10^3, length.out = 120)
+dir.create(paste0(outDir, "probabilities/"), showWarnings = F)
 
 # loop through all higap classes
 for (h in 1:4){  # set h = 2 for debugging
