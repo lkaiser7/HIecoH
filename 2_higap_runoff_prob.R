@@ -217,7 +217,9 @@ dim(higap_spdf); head(higap_spdf)
 rm(higap_ex)
 
 # create an empty raster object to the extent of the points
-rast<-raster(ncols = 240, nrows = 240, ext = extent(higap), crs = crs(higap))
+#rast<-raster(ncols = 240, nrows = 240, ext = extent(higap), crs = crs(higap))
+rast<-raster("data/pcp_base.tif") #use past raster created from lulins nc files as template
+rast=projectRaster(rast, crs = crs(higap))
 # dim() and values() are non-spatial properties
 # extent(), crs(), and res() are spatial properties
 
@@ -276,6 +278,7 @@ pgw_rast<-rasterize(rast_df, rast, rast_df$PGW_RUNOFF_PROB, fun = mean)
 # higap_mask<-mask(higap_samp, higap)
 
 # save raster outputs
+dir.create(paste0("outputs/prob_rasters/"), showWarnings = F)
 writeRaster(hist_rast, format = "GTiff", overwrite = TRUE,
             "outputs/prob_rasters/ALL_hist_prob_runoff_90m.tif")
 writeRaster(pgw_rast, format = "GTiff", overwrite = TRUE,
@@ -311,6 +314,7 @@ plot(pgw_rast*100 - hist_rast*100, col = rev(topo.colors(30)), main = "PGW - HIS
 dev.off()
 # plot(hist_rast*100 - pgw_rast*100, col = rev(topo.colors(30)), main = "Delta (%) Change")
 
+dir.create(paste0("outputs/prob_rasters/higap_class/"), showWarnings = F)
 # create function to run raster creation per higap class 
 class_rast<-function(class_nm, class_name){
   # select data for class
