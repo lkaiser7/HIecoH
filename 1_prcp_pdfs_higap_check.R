@@ -407,3 +407,22 @@ writeRaster(pgw_scen_raster_aggr, format = "GTiff", overwrite = TRUE,
 writeRaster(delta_scen_raster_aggr, format = "GTiff", overwrite = TRUE,
             paste0(outDir, out_dir, "delta_scen_raster_aggr.tif"), compress="LZW")
 
+
+##################
+#some summaries
+#hist
+x=zonal(hist_scen_raster_aggr, higap_aggr_raster, fun="mean")[,2]
+y=zonal(hist_scen_raster_aggr, higap_aggr_raster, fun="sd")[,2]
+z=zonal(hist_scen_raster_aggr, higap_aggr_raster, fun="count")[,2]
+
+x2=zonal(pgw_scen_raster_aggr, higap_aggr_raster, fun="mean")[,2]
+y2=zonal(pgw_scen_raster_aggr, higap_aggr_raster, fun="sd")[,2]
+z2=zonal(pgw_scen_raster_aggr, higap_aggr_raster, fun="count")[,2]
+
+cover_results=data.frame(hist_mean=x, hist_sd=y, hist_count=z,
+                              pgw_mean=x2, pgw_sd=y2, pgw_count=z2)
+
+#hist_cover_results$ci=hist_cover_results$sd*qnorm(0.975)/sqrt(hist_cover_results$count)
+#hist_cover_results$ci_high=hist_cover_results$mean+hist_cover_results$ci
+#hist_cover_results$ci_low=hist_cover_results$mean-hist_cover_results$ci
+
