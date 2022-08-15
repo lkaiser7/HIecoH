@@ -141,15 +141,9 @@ head(pdf_higap)
 # save final data set
 write.csv(pdf_higap, file = paste0(outDir, "AllRasters_coords_pdf_higap.csv"))
 
-####################################################
-#NOW CREATE A RASTER BASED ON THE POINT DATA
-
-#FIRST LOAD THE OUTPUTS FROM STEP ABOVE
-# create pdf higap raster
+#LOAD THE OUTPUTS FROM STEP ABOVE (if you don't want to run things from scratch)
 pdf_higap<-read.csv(paste0(outDir, "AllRasters_coords_pdf_higap.csv"))
-head(pdf_higap)
-
-# pdf historical and pgw (future) data
+#head(pdf_higap)
 nc_hist_data<-read.csv(paste0(outDir, "AllRasters_coords_historical_pdf.csv"))
 nc_pgw_data<-read.csv(paste0(outDir, "AllRasters_coords_future_pdf.csv"))
 # merge pdf higap data with historical and pgw (future) data
@@ -158,19 +152,8 @@ pdf_pgw<-cbind(pdf_higap, nc_pgw_data[,-1:-3])
 # head(pdf_hist, n = c(3, 9))
 # head(pdf_pgw, n = c(3, 9))
 
-# #GET HIGHER RESOLUTIO HIGAP (90M) AND TURN INTO DATA FRAME
-# # extract higap as data frame
-# # higap_spdf<-as.data.frame(as(higap, "SpatialPixelsDataFrame"))
-# higap_spdf<-as.data.frame(higap, xy = T)
-# higap_ex<-extract(higap, cbind(higap_spdf$x, higap_spdf$y), cellnumbers = T)
-# head(higap_ex)
-# higap_spdf$CELLS<-higap_ex[,1]
-# dim(higap_spdf); head(higap_spdf)
-# # remove data to free up memory space
-# rm(higap_ex)
-
-##################
-#now calc runoff prob
+##############################################
+#now calc runoff prob for each 
 # higap classes for reference
 # h_num<-c(0, 1, 2, 3)
 h_num<-c(1, 2, 3)
@@ -187,7 +170,7 @@ dir.create(paste0(outDir, "probabilities/"), showWarnings = F)
 pdf_hist_output_df<-pdf_hist[, 1:7]
 pdf_pgw_output_df<-pdf_pgw[, 1:7]
 
-# loop through all higap classes
+# loop through all higap classes and calculate runoff probabilities for each point
 h=1
 for (h in 1:3){  # set h = 2 for debugging
   cat(c_name, "\n") # for counting 
@@ -303,7 +286,7 @@ for (h in 1:3){  # set h = 2 for debugging
 #View(pdf_pgw_output_df)
 
 
-##########################################
+#################################################################
 #now create rasters at coarse scale for each cover type
 rast<-raster("data/pcp_base.tif") #use past raster created from lulins nc files as template
 rast=projectRaster(rast, crs = crs(higap))
@@ -338,11 +321,12 @@ plot(pgw_stack)
 
 ##########################################
 #make low resolution scenario rasters
-#first aggregate higap
+#first aggregate higap raster, so it matches the stacks created above
 higap_aggr_raster=raster::aggregate(higap_raster, fact=16, fun="modal", na.rm=T)
 higap_aggr_raster=projectRaster(higap_aggr_raster, hist_stack, method="ngb")
 #plot(higap_aggr_raster)
 
+#now use higap raster as an index to pick values from the stacks above
 hist_scen_raster_aggr=stackSelect(hist_stack, higap_aggr_raster)
 pgw_scen_raster_aggr=stackSelect(pgw_stack, higap_aggr_raster)
 delta_scen_raster_aggr=pgw_scen_raster_aggr-hist_scen_raster_aggr
@@ -352,7 +336,7 @@ plot(pgw_scen_raster_aggr)
 plot(delta_scen_raster_aggr)
 
 ##########################################
-#now project to same fine resolution as higap 90m map
+#now project stack into fine resolution spatial scale (same as higap 90m map)
 #higap_raster<-raster(paste0(dataDir, "higap/HIGAP_veg_type_90m_20210308.tif"))
 
 hist_stack_hr=resample(hist_stack, higap_raster, method="ngb")
@@ -408,8 +392,8 @@ writeRaster(delta_scen_raster_aggr, format = "GTiff", overwrite = TRUE,
             paste0(outDir, out_dir, "delta_scen_raster_aggr.tif"), compress="LZW")
 
 
-##################
-#some summaries
+###################################################
+#calculate some summaries
 #hist
 x=zonal(hist_scen_raster_aggr, higap_aggr_raster, fun="mean")[,2]
 y=zonal(hist_scen_raster_aggr, higap_aggr_raster, fun="sd")[,2]
@@ -421,6 +405,31 @@ z2=zonal(pgw_scen_raster_aggr, higap_aggr_raster, fun="count")[,2]
 
 cover_results=data.frame(hist_mean=x, hist_sd=y, hist_count=z,
                               pgw_mean=x2, pgw_sd=y2, pgw_count=z2)
+round(cover_results$hist_mean/cover_results$hist_mean[3], 2)
+
+#now make histograms
+
+i=1
+for (i in h_num){
+  c_name=h_name[i]
+  mask=higap_aggr_raster==i
+  mask[mask==0]=NA
+  tmp_raster=hist_scen_raster_aggr*mask
+  tmp=tmp_raster[]
+  tmp=tmp[!is.na(tmp)]
+  #plot(tmp_raster)
+  vals=hist(tmp, breaks=seq(0, 1, 0.005), plot=F)$density
+  vals_DF=data.frame(cover=c_name, x=seq(0, 1, 0.005)[-1], y=vals)
+  if (i==1){
+    combo_vals_DF=vals_DF
+  }else{
+    combo_vals_DF=rbind(combo_vals_DF, vals_DF)
+  }
+}
+#View(combo_vals_DF)
+library(ggplot2)
+ggplot(combo_vals_DF,aes(x=x,y=y,fill=cover)) + 
+        geom_bar(stat="identity",position = "dodge", alpha=.3)
 
 #hist_cover_results$ci=hist_cover_results$sd*qnorm(0.975)/sqrt(hist_cover_results$count)
 #hist_cover_results$ci_high=hist_cover_results$mean+hist_cover_results$ci
