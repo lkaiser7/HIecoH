@@ -337,6 +337,21 @@ plot(hist_stack)
 plot(pgw_stack)
 
 ##########################################
+#make low resolution scenario rasters
+#first aggregate higap
+higap_aggr_raster=raster::aggregate(higap_raster, fact=16, fun="modal", na.rm=T)
+higap_aggr_raster=projectRaster(higap_aggr_raster, hist_stack, method="ngb")
+#plot(higap_aggr_raster)
+
+hist_scen_raster_aggr=stackSelect(hist_stack, higap_aggr_raster)
+pgw_scen_raster_aggr=stackSelect(pgw_stack, higap_aggr_raster)
+delta_scen_raster_aggr=pgw_scen_raster_aggr-hist_scen_raster_aggr
+
+plot(hist_scen_raster_aggr)
+plot(pgw_scen_raster_aggr)
+plot(delta_scen_raster_aggr)
+
+##########################################
 #now project to same fine resolution as higap 90m map
 #higap_raster<-raster(paste0(dataDir, "higap/HIGAP_veg_type_90m_20210308.tif"))
 
@@ -362,25 +377,33 @@ plot(delta_scen_raster)
 
 ##########################################
 #write outputs
-out_dir="outputs/revised_raster_outputs/"
-dir.create(paste0(out_dir), showWarnings = F)
+out_dir="revised_raster_outputs/"
+dir.create(paste0(outDir, out_dir), showWarnings = F)
 writeRaster(hist_stack_hr, format = "GTiff", overwrite = TRUE,
-            paste0(out_dir, "hist_stack_hr.tif"), compress="LZW")
+            paste0(outDir, out_dir, "hist_stack_hr.tif"), compress="LZW")
 writeRaster(pgw_stack_hr, format = "GTiff", overwrite = TRUE,
-            paste0(out_dir, "pgw_stack_hr.tif"), compress="LZW")
+            paste0(outDir, out_dir, "pgw_stack_hr.tif"), compress="LZW")
 writeRaster(delta_stack_hr, format = "GTiff", overwrite = TRUE,
-            paste0(out_dir, "delta_stack_hr.tif"), compress="LZW")
+            paste0(outDir, out_dir, "delta_stack_hr.tif"), compress="LZW")
 
 writeRaster(hist_stack, format = "GTiff", overwrite = TRUE,
-            paste0(out_dir, "hist_stack.tif"), compress="LZW")
+            paste0(outDir, out_dir, "hist_stack.tif"), compress="LZW")
 writeRaster(pgw_stack, format = "GTiff", overwrite = TRUE,
-            paste0(out_dir, "pgw_stack.tif"), compress="LZW")
+            paste0(outDir, out_dir, "pgw_stack.tif"), compress="LZW")
 writeRaster(delta_stack, format = "GTiff", overwrite = TRUE,
-            paste0(out_dir, "delta_stack.tif"), compress="LZW")
+            paste0(outDir, out_dir, "delta_stack.tif"), compress="LZW")
 
 writeRaster(hist_scen_raster, format = "GTiff", overwrite = TRUE,
-            paste0(out_dir, "hist_scen_raster.tif"), compress="LZW")
+            paste0(outDir, out_dir, "hist_scen_raster.tif"), compress="LZW")
 writeRaster(pgw_scen_raster, format = "GTiff", overwrite = TRUE,
-            paste0(out_dir, "pgw_scen_raster.tif"), compress="LZW")
+            paste0(outDir, out_dir, "pgw_scen_raster.tif"), compress="LZW")
 writeRaster(delta_scen_raster, format = "GTiff", overwrite = TRUE,
-            paste0(out_dir, "delta_scen_raster.tif"), compress="LZW")
+            paste0(outDir, out_dir, "delta_scen_raster.tif"), compress="LZW")
+
+writeRaster(hist_scen_raster_aggr, format = "GTiff", overwrite = TRUE,
+            paste0(outDir, out_dir, "hist_scen_raster_aggr.tif"), compress="LZW")
+writeRaster(pgw_scen_raster_aggr, format = "GTiff", overwrite = TRUE,
+            paste0(outDir, out_dir, "pgw_scen_raster_aggr.tif"), compress="LZW")
+writeRaster(delta_scen_raster_aggr, format = "GTiff", overwrite = TRUE,
+            paste0(outDir, out_dir, "delta_scen_raster_aggr.tif"), compress="LZW")
+
