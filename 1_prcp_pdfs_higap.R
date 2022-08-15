@@ -178,23 +178,43 @@ rast=projectRaster(rast, crs = crs(higap))
 # extent(), crs(), and res() are spatial properties
 
 # #check resolution
-# tmp=pdf_higap[c(1:100),]
-# jnk=abs(tmp$X_UTM-c(tmp$X_UTM[c(2:length(tmp$X_UTM))], NA))
-# jnk[jnk==0]=NA
-# min(jnk, na.rm=T) #x resolution
-# 
-# jnk=abs(tmp$Y_UTM-c(tmp$Y_UTM[c(2:length(tmp$Y_UTM))], NA))
-# jnk[jnk==0]=NA
-# min(jnk, na.rm=T) #x resolution
+tmp=pdf_higap#[c(2000:3000),]
+jnk=abs(tmp$X_UTM-c(tmp$X_UTM[c(2:length(tmp$X_UTM))], NA))
+jnk[jnk==0]=NA
+jnk[jnk>10000]=NA
+hist(jnk)
+min(jnk, na.rm=T) #x resolution
+
+jnk=abs(tmp$Y_UTM-c(tmp$Y_UTM[c(2:length(tmp$Y_UTM))], NA))
+jnk[jnk==0]=NA
+jnk[jnk>10000]=NA
+hist(jnk)
+min(jnk, na.rm=T) #x resolution
+
+# library(terra)
+# tmp_raster=rast(higap_df[,c("X_UTM", "Y_UTM", "X")], type="xyz", digits=1)
+
+# points<-pdf_higap[,c("X_UTM", "Y_UTM", "X")]
+# # create a SpatialPointsDataFrame
+# coordinates(points) = ~X_UTM+Y_UTM 
+# pixels <- SpatialPixelsDataFrame(points, tolerance = 0.7, points@data)
+# raster <- raster(pixels[,'X'])
+# plot(raster)
 
 # set up data frames for rasters
-higap_df<-pdf_higap[,c(5, 6, 1)]
+higap_df<-pdf_higap[,c("X_UTM", "Y_UTM", "X", "CELL", "LONG", "LAT")]
 # create a SpatialPointsDataFrame
 coordinates(higap_df) = ~X_UTM+Y_UTM 
 # rasterize your irregular points (not gridded)
-higap_rast<-rasterize(higap_df, rast, higap_df$X)
+higap_rast<-rasterize(higap_df, rast, higap_df$LAT)
 # mean not used to avoid changing/averaging values
 plot(higap_rast)
+plot(higap_df, add=T)
+#View(higap_df@data)
+
+library(rgdal)
+#writeOGR(obj=higap_df, dsn="output", layer="torn", driver="ESRI Shapefile") # this is in geographical projection
+writeOGR(obj=higap_df, dsn=paste0(outDir, "orig_points.gpkg"), layer="points", driver="GPKG")
 
 # extract pdf cells from higap points
 pdf_ex<-extract(higap_rast, cbind(higap_spdf$x, higap_spdf$y), cellnumbers = T)
