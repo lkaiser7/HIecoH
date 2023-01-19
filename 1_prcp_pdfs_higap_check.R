@@ -37,6 +37,14 @@ higap_raster<-raster(paste0(dataDir, "higap/HIGAP_veg_type_90m_20210308.tif"))
 higap_raster[higap_raster==3]=2
 higap_raster=higap_raster+1
 #plot(higap_raster)
+
+not_too_young=raster(paste0(dataDir, "young_substrate_pioneer.tif"))
+not_too_young=!not_too_young
+not_too_young[not_too_young==0]=NA
+not_too_young=resample(not_too_young, higap_raster, method="ngb")
+
+#plot(not_too_young)
+
 # 0 - bare
 # 1 - grass 
 # 2 - shrub 
@@ -173,11 +181,11 @@ pdf_pgw_output_df<-pdf_pgw[, 1:7]
 # loop through all higap classes and calculate runoff probabilities for each point
 h=1
 for (h in 1:3){  # set h = 2 for debugging
-  cat(c_name, "\n") # for counting 
   # select higap class
   c_num<-h_num[h]
   c_name<-h_name[h]
-
+  cat(c_name, "\n") # for counting 
+  
   
   # kfs by higap class
   kfs<-kfs_class$Kfs[which(kfs_class$cover_type == c_name)]
@@ -222,6 +230,7 @@ for (h in 1:3){  # set h = 2 for debugging
     # hist(rf_dist_pgw)
     
     # rainfall probabilities along the size classes
+    #midpoints=hist(rf_dist_hist, breaks=flux_breaks, plot=F)$mids
     rf_prob_hist=hist(rf_dist_hist, breaks=flux_breaks, plot=F)$counts/sum(hist(rf_dist_hist, breaks=flux_breaks, plot=F)$counts)
     # plot(flux_breaks_midpoints, rf_prob_hist, type="l")
     rf_prob_pgw=hist(rf_dist_pgw, breaks=flux_breaks, plot=F)$counts/sum(hist(rf_dist_pgw, breaks=flux_breaks, plot=F)$counts)
@@ -235,6 +244,10 @@ for (h in 1:3){  # set h = 2 for debugging
     joined_DF$RF_intensity_CDF=cumsum(joined_DF$RF_intensity)
     # calculate cumulative probability of runoff
     joined_DF$Kfs_CDF_inv=1-joined_DF$Kfs_CDF
+    #View(joined_DF)
+    #tmp_DF=joined_DF[c(1:23),]
+    #plot(tmp_DF$mm, tmp_DF$Kfs, xlab="Baresoil infiltration capacity (mm/hr)", ylab="Density", type="l", col="red", lwd=5)
+    #plot(tmp_DF$mm, tmp_DF$RF_intensity, xlab="Rainfall intensity (mm/hr)", ylab="Density", type="l", col="blue", lwd=5)
     
     # PREVIOUS CALC
     # joined_DF$P_RF_gtr_Kfs=joined_DF$RF_intensity*joined_DF$Kfs_CDF
@@ -289,7 +302,7 @@ for (h in 1:3){  # set h = 2 for debugging
 #################################################################
 #now create rasters at coarse scale for each cover type
 rast<-raster("data/pcp_base.tif") #use past raster created from lulins nc files as template
-rast=projectRaster(rast, crs = crs(higap))
+rast=projectRaster(rast, crs = crs(higap_raster))
 
 df_names=c("pdf_hist_output_df", "pdf_pgw_output_df")
 df_name=df_names[1]
@@ -324,12 +337,20 @@ plot(pgw_stack)
 #first aggregate higap raster, so it matches the stacks created above
 higap_aggr_raster=raster::aggregate(higap_raster, fact=16, fun="modal", na.rm=T)
 higap_aggr_raster=projectRaster(higap_aggr_raster, hist_stack, method="ngb")
+
+not_too_young_aggr_raster=raster::aggregate(not_too_young, fact=16, fun="modal", na.rm=T)
+not_too_young_aggr_raster=projectRaster(not_too_young_aggr_raster, hist_stack, method="ngb")
+
 #plot(higap_aggr_raster)
 
 #now use higap raster as an index to pick values from the stacks above
 hist_scen_raster_aggr=stackSelect(hist_stack, higap_aggr_raster)
 pgw_scen_raster_aggr=stackSelect(pgw_stack, higap_aggr_raster)
 delta_scen_raster_aggr=pgw_scen_raster_aggr-hist_scen_raster_aggr
+
+hist_scen_raster_aggr=hist_scen_raster_aggr*not_too_young_aggr_raster
+pgw_scen_raster_aggr=pgw_scen_raster_aggr*not_too_young_aggr_raster
+delta_scen_raster_aggr=delta_scen_raster_aggr*not_too_young_aggr_raster
 
 plot(hist_scen_raster_aggr)
 plot(pgw_scen_raster_aggr)
@@ -351,13 +372,22 @@ delta_stack_hr=pgw_stack_hr-hist_stack_hr
 
 ##########################################
 #now use fine scale higap map to create map
-hist_scen_raster=stackSelect(hist_stack_hr, higap_raster)
-pgw_scen_raster=stackSelect(pgw_stack_hr, higap_raster)
-delta_scen_raster=pgw_scen_raster-hist_scen_raster
+hist_scen_raster=stackSelect(hist_stack_hr, higap_raster)*not_too_young
+pgw_scen_raster=stackSelect(pgw_stack_hr, higap_raster)*not_too_young
+delta_scen_raster=pgw_scen_raster-hist_scen_raster*not_too_young
+delta_scen_raster_prop=(pgw_scen_raster-hist_scen_raster)/hist_scen_raster
 
-plot(hist_scen_raster)
-plot(pgw_scen_raster)
+
+library(viridis)
+plot(hist_scen_raster, col=viridis(100), axes=F)
+plot(loc_utm, add = T)
+plot(pgw_scen_raster, col=viridis(100), axes=F)
+plot(loc_utm, add = T)
 plot(delta_scen_raster)
+plot(loc_utm, add = T)
+plot(delta_scen_raster_prop)
+plot(loc_utm, add = T)
+
 
 ##########################################
 #write outputs
@@ -383,6 +413,9 @@ writeRaster(pgw_scen_raster, format = "GTiff", overwrite = TRUE,
             paste0(outDir, out_dir, "pgw_scen_raster.tif"), compress="LZW")
 writeRaster(delta_scen_raster, format = "GTiff", overwrite = TRUE,
             paste0(outDir, out_dir, "delta_scen_raster.tif"), compress="LZW")
+writeRaster(delta_scen_raster_prop, format = "GTiff", overwrite = TRUE,
+            paste0(outDir, out_dir, "delta_scen_raster_prop.tif"), compress="LZW")
+
 
 writeRaster(hist_scen_raster_aggr, format = "GTiff", overwrite = TRUE,
             paste0(outDir, out_dir, "hist_scen_raster_aggr.tif"), compress="LZW")
@@ -391,6 +424,49 @@ writeRaster(pgw_scen_raster_aggr, format = "GTiff", overwrite = TRUE,
 writeRaster(delta_scen_raster_aggr, format = "GTiff", overwrite = TRUE,
             paste0(outDir, out_dir, "delta_scen_raster_aggr.tif"), compress="LZW")
 
+tif_name=paste0(outDir, out_dir, "hist_scen_raster.tif")
+tiff(tif_name, res = 300, units = "in", 
+     pointsize = 12, width = 10, height = 8, compression = "lzw")
+plot(hist_scen_raster, col=viridis(100), axes=F)
+plot(loc_utm, add = T)
+dev.off()
+
+tif_name=paste0(outDir, out_dir, "pgw_scen_raster.tif")
+tiff(tif_name, res = 300, units = "in", 
+     pointsize = 12, width = 10, height = 8, compression = "lzw")
+plot(pgw_scen_raster, col=viridis(100), axes=F)
+plot(loc_utm, add = T)
+dev.off()
+
+tif_name=paste0(outDir, out_dir, "delta_scen_raster.tif")
+min_val=floor(cellStats(delta_scen_raster, min, na.rm=T)*100)/100
+max_val=ceiling(cellStats(delta_scen_raster, max, na.rm=T)*100)/100
+step_sz=0.0025
+neg_vals=seq(min_val, -step_sz, step_sz)
+pos_vals=seq(step_sz, max_val, step_sz)
+breakpoints <- c(neg_vals, 0, pos_vals)
+colors <- c(rev(RColorBrewer::brewer.pal(length(neg_vals), "Reds")), "white", RColorBrewer::brewer.pal(length(pos_vals), "Blues"))
+
+tiff(tif_name, res = 300, units = "in", 
+     pointsize = 12, width = 10, height = 8, compression = "lzw")
+plot(delta_scen_raster, breaks = breakpoints, col = colors, axes=F)
+plot(loc_utm, add = T)
+dev.off()
+
+tif_name=paste0(outDir, out_dir, "delta_scen_raster_prop.tif")
+min_val=floor(cellStats(delta_scen_raster_prop, min, na.rm=T)*100)/100
+max_val=ceiling(cellStats(delta_scen_raster_prop, max, na.rm=T)*100)/100
+neg_vals=seq(min_val, -0.005, 0.005)
+pos_vals=seq(0.005, max_val, 0.005)
+breakpoints <- c(neg_vals, 0, pos_vals)
+colors <- c(rev(RColorBrewer::brewer.pal(length(neg_vals), "Reds")), "white", RColorBrewer::brewer.pal(length(pos_vals), "Blues"))
+#plot(delta_scen_raster_prop, breaks = breakpoints, col = colors)
+
+tiff(tif_name, res = 300, units = "in", 
+     pointsize = 12, width = 10, height = 8, compression = "lzw")
+plot(delta_scen_raster_prop, breaks = breakpoints, col = colors, axes=F)
+plot(loc_utm, add = T)
+dev.off()
 
 ###################################################
 #calculate some summaries
@@ -405,8 +481,9 @@ z2=zonal(pgw_scen_raster_aggr, higap_aggr_raster, fun="count")[,2]
 
 cover_results=data.frame(hist_mean=x, hist_sd=y, hist_count=z,
                               pgw_mean=x2, pgw_sd=y2, pgw_count=z2)
-round(cover_results$hist_mean/cover_results$hist_mean[3], 2)
-
+write.csv(cover_results, paste0(outDir, "runoff_probabilities.csv"), row.names = F)
+jnk=round(cover_results$hist_mean/cover_results$hist_mean[3], 2)
+dput(jnk) #c(3.34, 1.75, 1)
 #now make histograms
 
 i=1
