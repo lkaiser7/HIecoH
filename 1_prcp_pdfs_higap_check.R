@@ -424,21 +424,21 @@ writeRaster(pgw_scen_raster_aggr, format = "GTiff", overwrite = TRUE,
 writeRaster(delta_scen_raster_aggr, format = "GTiff", overwrite = TRUE,
             paste0(outDir, out_dir, "delta_scen_raster_aggr.tif"), compress="LZW")
 
-tif_name=paste0(outDir, out_dir, "hist_scen_raster.tif")
+tif_name=paste0(outDir, out_dir, "hist_scen_raster_fig.tif")
 tiff(tif_name, res = 300, units = "in", 
      pointsize = 12, width = 10, height = 8, compression = "lzw")
 plot(hist_scen_raster, col=viridis(100), axes=F)
 plot(loc_utm, add = T)
 dev.off()
 
-tif_name=paste0(outDir, out_dir, "pgw_scen_raster.tif")
+tif_name=paste0(outDir, out_dir, "pgw_scen_raster_fig.tif")
 tiff(tif_name, res = 300, units = "in", 
      pointsize = 12, width = 10, height = 8, compression = "lzw")
 plot(pgw_scen_raster, col=viridis(100), axes=F)
 plot(loc_utm, add = T)
 dev.off()
 
-tif_name=paste0(outDir, out_dir, "delta_scen_raster.tif")
+tif_name=paste0(outDir, out_dir, "delta_scen_raster_fig.tif")
 min_val=floor(cellStats(delta_scen_raster, min, na.rm=T)*100)/100
 max_val=ceiling(cellStats(delta_scen_raster, max, na.rm=T)*100)/100
 step_sz=0.0025
@@ -453,7 +453,7 @@ plot(delta_scen_raster, breaks = breakpoints, col = colors, axes=F)
 plot(loc_utm, add = T)
 dev.off()
 
-tif_name=paste0(outDir, out_dir, "delta_scen_raster_prop.tif")
+tif_name=paste0(outDir, out_dir, "delta_scen_raster_prop_fig.tif")
 min_val=floor(cellStats(delta_scen_raster_prop, min, na.rm=T)*100)/100
 max_val=ceiling(cellStats(delta_scen_raster_prop, max, na.rm=T)*100)/100
 neg_vals=seq(min_val, -0.005, 0.005)
